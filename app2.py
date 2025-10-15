@@ -716,4 +716,68 @@ else:
 # --- Article 2 & Mind Map ---
 st.header("🧠 Mind Map Generation")
 
-article2_input = st.text_area("Paste Article 2 (txt or markdown)",
+article2_input = st.text_area("Paste Article 2 (txt or markdown)", height=200)
+
+if st.button("Process Article 2") and article2_input:
+    with st.spinner("Processing Article 2..."):
+        show_fancy_progress("Analyzing Article 2", 2)
+        keywords2 = extract_keywords(article2_input)
+        st.session_state.article2_markdown = highlight_keywords(article2_input, keywords2)
+        st.success("✅ Article 2 processed!")
+
+if st.session_state.article2_markdown:
+    st.markdown(st.session_state.article2_markdown, unsafe_allow_html=True)
+    
+    if st.button("Generate Relationships"):
+        with st.spinner("Finding relationships..."):
+            show_fancy_progress("Mapping connections", 3)
+            prompt = f"""Analyze these two documents and create relationships for a mind map.
+            Return as: (Source, Target, Relationship) tuples, one per line.
+            
+            Document 1: {st.session_state.combined_markdown[:5000]}
+            Document 2: {st.session_state.article2_markdown[:5000]}
+            """
+            result = call_llm_api(
+                "Gemini",
+                st.session_state.api_keys["Gemini"],
+                "gemini-2.5-flash",
+                prompt
+            )
+            
+            # Parse relationships
+            relationships = []
+            for line in result.split('\n'):
+                if ',' in line:
+                    parts = [p.strip().strip('()') for p in line.split(',')]
+                    if len(parts) >= 3:
+                        relationships.append(tuple(parts[:3]))
+            
+            st.session_state.mind_map_relationships = relationships
+    
+    if st.session_state.mind_map_relationships:
+        st.subheader("Edit Relationships")
+        edited_rels = st.text_area(
+            "Relationships (Source, Target, Relation)",
+            "\n".join([f"{s}, {t}, {r}" for s, t, r in st.session_state.mind_map_relationships]),
+            height=200
+        )
+        
+        if st.button("Update Mind Map"):
+            # Parse edited relationships
+            new_rels = []
+            for line in edited_rels.split('\n'):
+                if ',' in line:
+                    parts = [p.strip() for p in line.split(',')]
+                    if len(parts) >= 3:
+                        new_rels.append(tuple(parts[:3]))
+            st.session_state.mind_map_relationships = new_rels
+            
+            # Create mind map
+            with st.spinner("Creating interactive mind map..."):
+                show_fancy_progress("Building visualization", 2)
+                html = create_interactive_mindmap(st.session_state.mind_map_relationships)
+                st.components.v1.html(html, height=650)
+
+st.markdown("---")
+st.markdown("### 💡 Have questions? Need help?")
+st.markdown("Feel free to explore all features and customize to your needs!")
