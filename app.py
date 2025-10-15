@@ -574,7 +574,7 @@ if st.button("Generate Relationships") and article2_input and st.session_state.r
         ("AI in Healthcare", "Diagnostic Accuracy", "Improves")
         ("Machine Learning", "Data Privacy", "Raises concerns about")
         """
-        result = call_llm_api("Gemini", st.session_state.api_keys.get("Gemini"), "gemini-1.5-flash", prompt)
+        result = call_llm_api("Gemini", st.session_state.api_keys.get("Gemini"), "gemini-2.5-flash", prompt)
         
         if result:
             relationships = []
